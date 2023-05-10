@@ -2,7 +2,7 @@
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel
 from pydantic.networks import EmailStr
@@ -51,11 +51,14 @@ class PostBase(BaseModel):
 
 class PostCreate(PostBase):
     board_name: str
+    parent_id: int = None
 
 class Post(PostBase):
     post_id: int
     board: BoardBase
     date: str = None
+    parent_id: int = None
+    children: list["Post"] = []
 
     class Config:
         orm_mode = True

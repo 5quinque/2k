@@ -35,6 +35,7 @@ def create_post(
         message=post.message,
         date=datetime.now(),
         board_id=1,
+        parent_id=post.parent_id,
     )
 
     return db_post

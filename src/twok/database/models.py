@@ -33,8 +33,7 @@ class Post(Base):
     board = relationship("Board", back_populates="posts")
 
     parent_id = Column(Integer, ForeignKey("post.post_id"), index=True, nullable=True)
-    # children = relationship("Post", backref="parent", remote_side=[post_id])
-
+    parent = relationship("Post", backref="children", remote_side=[post_id])
 
 class Board(Base):
     __tablename__ = "board"
