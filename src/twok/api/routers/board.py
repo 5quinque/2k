@@ -19,7 +19,7 @@ def read_boards(
     return db_boards
 
 
-@board_router.get("/{board_id}", response_model=schemas.Board)
+@board_router.get("/{board_name}", response_model=schemas.Board)
 def read_board(board: dependencies.board):
     return board
 

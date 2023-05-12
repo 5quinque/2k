@@ -60,8 +60,8 @@ def _post(post_id: int, db: DB = Depends(_db)):
     return db_post
 
 
-def _board(board_id: int, db: DB = Depends(_db)):
-    db_board = db.board.get(filter=[models.Board.board_id == board_id])
+def _board(board_name: str, db: DB = Depends(_db)):
+    db_board = db.board.get(filter=[models.Board.name == board_name])
 
     if db_board is None:
         raise HTTPException(status_code=404, detail="Board not found")
