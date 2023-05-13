@@ -35,9 +35,23 @@ class Post(Base):
     parent_id = Column(Integer, ForeignKey("post.post_id"), index=True, nullable=True)
     parent = relationship("Post", backref="children", remote_side=[post_id])
 
+    latest_reply_date = Column(String(32), nullable=True)
+
+    file = relationship("File", back_populates="post", uselist=False)
+
 class Board(Base):
     __tablename__ = "board"
 
     board_id = Column(Integer, primary_key=True)
     name = Column(String(128), nullable=False)
     posts = relationship("Post", back_populates="board")
+
+class File(Base):
+    __tablename__ = "file"
+
+    file_id = Column(Integer, primary_key=True)
+    file_name = Column(String(128), nullable=False)
+    file_hash = Column(String(128), nullable=False)
+    content_type = Column(String(64), nullable=False)  # mimetype
+    post_id = Column(Integer, ForeignKey("post.post_id"))
+    post = relationship("Post", back_populates="file")

@@ -10,6 +10,7 @@ from twok.database.models import (
 )
 
 from twok.database.crud.table.board import Board as BoardCRUD
+from twok.database.crud.table.file import File as FileCRUD
 from twok.database.crud.table.post import Post as PostCRUD
 from twok.database.crud.table.user import User as UserCRUD
 
@@ -21,6 +22,7 @@ class DB:
         self._session = session
 
         self.board = BoardCRUD(self._session)
+        self.file = FileCRUD(self._session)
         self.post = PostCRUD(self._session)
         self.user = UserCRUD(self._session)
 

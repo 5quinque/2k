@@ -1,6 +1,9 @@
 from datetime import datetime
-from fastapi import APIRouter
+from typing import Optional
 
+from fastapi import APIRouter, HTTPException, UploadFile
+
+from twok import files
 from twok.api import dependencies
 from twok.database import schemas, models
 
@@ -39,3 +42,26 @@ def create_post(
     )
 
     return db_post
+
+@post_router.post("/upload", response_model=schemas.FileBase, status_code=201)
+async def upload_file(db: dependencies.database, file: UploadFile, post_id: Optional[int] = None):
+    file_hash = await files.save_upload_file(file)
+
+    # check if post exists and return 404 if not
+    if post_id:
+        db_post = db.post.get(filter=[models.Post.post_id == post_id])
+        if not db_post:
+            raise HTTPException(status_code=404, detail="Post not found")
+
+    db_file = db.file.create(
+        filter=None,
+        file_name=file.filename,
+        file_hash=file_hash,
+        content_type=file.content_type,
+        post_id=post_id,
+    )
+
+    if not db_file:
+        raise HTTPException(status_code=409, detail="File already exists")
+
+    return db_file

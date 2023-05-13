@@ -4,6 +4,7 @@
 from datetime import datetime
 from typing import Optional, List
 
+from fastapi import UploadFile
 from pydantic import BaseModel
 from pydantic.networks import EmailStr
 
@@ -53,12 +54,23 @@ class PostCreate(PostBase):
     board_name: str
     parent_id: int = None
 
+
 class Post(PostBase):
     post_id: int
     board: BoardBase
     date: str = None
     parent_id: int = None
     children: list["Post"] = []
+
+    class Config:
+        orm_mode = True
+
+class FileBase(BaseModel):
+    file_id: int
+    file_name: str
+    file_hash: str
+    content_type: str
+    post_id: int = None
 
     class Config:
         orm_mode = True
