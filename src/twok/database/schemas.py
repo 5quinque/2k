@@ -61,6 +61,7 @@ class Post(PostBase):
     date: str = None
     parent_id: int = None
     children: list["Post"] = []
+    latest_reply_date: str = None
 
     class Config:
         orm_mode = True

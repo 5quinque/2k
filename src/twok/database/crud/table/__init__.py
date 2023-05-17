@@ -78,26 +78,3 @@ class Table:
         """
         self._session.delete(entity)
         self._session.commit()
-
-    def search(self, query, query_column: Optional[sqlalchemy.Column] = None):
-        """Search for an entity by name
-
-        Args:
-            query (str): String to search for
-            query_column (sqlalchemy.Column, optional): Column to search in. Defaults to None which is `this.main_column`.
-
-        Returns:
-            list[entity]: List of entities
-
-        n.b.
-            This is a very simple search that just looks for the query string anywhere in the title.
-            It's not very good, but it's good enough for now.
-        """
-        if not query_column:
-            query_column = self.main_column
-
-        return (
-            self._session.query(self.table)
-            .filter(query_column.ilike(f"%{query}%"))
-            .all()
-        )

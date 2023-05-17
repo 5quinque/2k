@@ -10,19 +10,18 @@ search_router = APIRouter(
 )
 
 
-# Search endpoints
-@search_router.get(
-    "/any/{query}",
-    response_model=schemas.SearchListResponse,
-)
-def search_any(query: str, db: dependencies.database):
-    db_results = db.search_all(query)
-
-    return db_results
+@search_router.get("/board/{board_name}/post/{query}", response_model=list[schemas.Post])
+def search_post_by_board(posts: dependencies.search_posts):
+    return posts
 
 
 @search_router.get("/post/{query}", response_model=list[schemas.Post])
-def search_post(query: str, db: dependencies.database):
-    db_results = db.post.search(query)
+def search_post(posts: dependencies.search_posts):
+    return posts
 
-    return db_results
+
+# @search_router.get("/board/{query}", response_model=list[schemas.Board])
+# def search_post(query: str, db: dependencies.database):
+#     db_results = db.board.search(query)
+
+#     return db_results
