@@ -15,13 +15,18 @@ class Post(Table):
 
         self.main_column = PostModel.title
 
-    def create(self, filter=None, **kwargs: dict):
-        db_post = super().create(filter, **kwargs)
+    def create(self, **kwargs: dict):
+        post = self.table(**kwargs)
 
-        if db_post:
-            self.update(self.root_parent(db_post), latest_reply_date=db_post.date)
+        self._session.add(post)
+        self._session.commit()
 
-        return db_post
+        if post.parent:
+            self.update(self.root_parent(post), latest_reply_date=post.date)
+        else:
+            post.latest_reply_date = post.date
+
+        return post
 
     def root_parent(self, post: PostModel):
         if post.parent:
@@ -29,13 +34,7 @@ class Post(Table):
 
         return post
 
-    def search(
-        self,
-        query,
-        board_name: Optional[str]=None,
-        skip=0,
-        limit=20
-    ):
+    def search(self, query, board_name: Optional[str] = None, skip=0, limit=20):
         """Search for an entity by name
 
         Args:

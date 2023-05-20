@@ -55,3 +55,10 @@ class File(Base):
     content_type = Column(String(64), nullable=False)  # mimetype
     post_id = Column(Integer, ForeignKey("post.post_id"))
     post = relationship("Post", back_populates="file")
+
+class Requester(Base):
+    __tablename__ = "requester"
+
+    requester_id = Column(Integer, primary_key=True)
+    ip_address = Column(String(64), nullable=False)
+    last_post_time = Column(String(32), nullable=False)

@@ -1,6 +1,6 @@
 import sqlalchemy
 
-from twok.api.config import settings
+from twok.api.config import Settings
 from twok.database.crud.table import Table
 from twok.database.models import Board as BoardModel
 
@@ -27,4 +27,4 @@ class Board(Table):
 
         post_count = len(board.posts)
 
-        return (post_count // settings.items_per_page) + 1
+        return (post_count // Settings().items_per_page) + 1

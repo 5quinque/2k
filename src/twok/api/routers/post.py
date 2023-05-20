@@ -1,7 +1,8 @@
+import html
 from datetime import datetime
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, Form, UploadFile
+from fastapi import APIRouter, HTTPException, Form, UploadFile, Response
 
 from twok import files
 from twok.api import dependencies
@@ -19,23 +20,43 @@ def read_post(post: dependencies.post):
     return post
 
 
+@post_router.options("", response_model=schemas.Post)
+def options_create_post():
+    return Response(
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "OPTIONS, POST",
+            "Access-Control-Allow-Headers": "accept, Authorization, Content-Type",
+        }
+    )
+
+
 @post_router.post("", response_model=schemas.Post, status_code=201)
-def create_post(post: schemas.PostCreate, db: dependencies.database):
+def create_post(
+    post: schemas.PostCreate,
+    db: dependencies.database,
+    post_prechecks: dependencies.post_prechecks,
+):
     db_board = db.board.get(filter=[models.Board.name == post.board_name])
     if not db_board:
         raise HTTPException(status_code=404, detail="Board not found")
 
+    post_messaged_escaped = html.escape(post.message)
+
     db_post = db.post.create(
-        filter=None,
         title=post.title,
-        message=post.message,
+        message=post_messaged_escaped,
         date=datetime.now(),
         board_id=db_board.board_id,
         parent_id=post.parent_id,
     )
 
-    if not db_post:
-        raise HTTPException(status_code=409, detail="Post already exists")
+    if post.file_id:
+        db_file = db.file.get(filter=[models.File.file_id == post.file_id])
+        if not db_file:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        db.file.update(db_file, post_id=db_post.post_id)
 
     return db_post
 
@@ -44,7 +65,7 @@ def create_post(post: schemas.PostCreate, db: dependencies.database):
 async def upload_file(
     db: dependencies.database,
     file: UploadFile,
-    post_id: Annotated[Optional[int], Form()],
+    post_id: Annotated[Optional[int], Form()] = None,
 ):
     file_hash = await files.save_upload_file(file)
 

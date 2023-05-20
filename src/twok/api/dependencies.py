@@ -1,9 +1,10 @@
+from datetime import datetime
 from typing import Annotated, Dict, Optional
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 
-from twok.api.config import settings
+from twok.api.config import Settings
 from twok.api.services.auth import Auth
 from twok.database.crud import DB
 from twok.database import schemas, models
@@ -23,7 +24,11 @@ def _db(request: Request):
         del db
 
 
-def _pagination_parameters(page: int = 1):
+def _settings() -> Settings:
+    return Settings()
+
+
+def _pagination_parameters(page: int = 1, settings: Settings = Depends(_settings)):
     # Can you use a dataclass here, does it make sense to?
     skip = (page - 1) * settings.items_per_page
 
@@ -80,9 +85,11 @@ def _posts(
     if board is None:
         raise HTTPException(status_code=404, detail="Board not found")
 
+    filter = [models.Post.board_id == board.board_id and models.Post.parent_id == None]
+
     db_posts = db.api_get(
         table=models.Post,
-        filter=[models.Post.board_id == board.board_id],
+        filter=filter,
         order_by=models.Post.latest_reply_date.desc(),
         skip=pagination["skip"],
         limit=pagination["limit"],
@@ -125,6 +132,48 @@ def _search_posts(
     return db_results
 
 
+def _post_prechecks(
+    request: Request,
+    db: DB = Depends(_db),
+    settings: Settings = Depends(_settings),
+):
+    # Get the IP address of the requester from the request object
+    requester_ip_addr = request.client.host
+
+    # Check if the requester IP address exists in the database
+    db_requester = db.requester.get(
+        filter=[models.Requester.ip_address == requester_ip_addr]
+    )
+
+    if db_requester:
+        # Retrieve the last post time from the database
+        last_post_time: str = db_requester.last_post_time
+        current_time: datetime = datetime.now()
+
+        # Calculate the time difference between the current time and the last post time
+        # and represent it as a timedelta object
+        time_difference = current_time - datetime.strptime(
+            last_post_time, "%Y-%m-%d %H:%M:%S.%f"
+        )
+
+        # If the time difference is less than the limit, return False to indicate that the post is not allowed
+        if time_difference < settings.post_time_limit:
+            raise HTTPException(status_code=429, detail="Probably posting too fast")
+
+        db.requester.update(db_requester, last_post_time=current_time)
+    else:
+        # If the requester IP address doesn't exist in the database, create a new entry
+        # db_requester = models.Requester(ip_address=requester_ip_addr)
+        db.requester.create(
+            filter=None,
+            ip_address=requester_ip_addr,
+            last_post_time=datetime.now(),
+        )
+
+    # Return True to indicate that the post is allowed
+    return True
+
+
 auth = Annotated[Auth, Depends(_auth)]
 current_user = Annotated[bool, Depends(_current_user)]
 database = Annotated[DB, Depends(_db)]
@@ -134,3 +183,4 @@ post = Annotated[schemas.Post, Depends(_post)]
 posts = Annotated[list[schemas.Post], Depends(_posts)]
 board = Annotated[schemas.Board, Depends(_board)]
 search_posts = Annotated[list[schemas.Post], Depends(_search_posts)]
+post_prechecks = Annotated[bool, Depends(_post_prechecks)]
