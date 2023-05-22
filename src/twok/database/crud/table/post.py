@@ -18,13 +18,13 @@ class Post(Table):
     def create(self, **kwargs: dict):
         post = self.table(**kwargs)
 
+        # we have to do two database call here,
+        # and i can't be bothered to explain why
+
         self._session.add(post)
         self._session.commit()
 
-        if post.parent:
-            self.update(self.root_parent(post), latest_reply_date=post.date)
-        else:
-            post.latest_reply_date = post.date
+        self.update(self.root_parent(post), latest_reply_date=post.date)
 
         return post
 
