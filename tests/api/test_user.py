@@ -3,15 +3,13 @@ def test_create_user(client):
         response = c.post(
             "/user",
             json={
-                "name": "username",
-                "email_address": "user@example.com",
+                "username": "username",
                 "plaintext_password": "pasword",
             },
         )
     assert response.status_code == 201
     assert response.json() == {
-        "name": "username",
-        "email_address": "user@example.com",
+        "username": "username",
         "user_id": 1,
     }
 
@@ -21,8 +19,7 @@ def test_create_user_duplicate(create_user, client):
         response = c.post(
             "/user",
             json={
-                "name": "username",
-                "email_address": "user@example.com",
+                "username": "username",
                 "plaintext_password": "pasword",
             },
         )
@@ -44,7 +41,7 @@ def test_options_create_user(client):
 def test_login(create_user, client):
     with client as c:
         response = c.post(
-            "/token",
+            "/user/token",
             data={
                 "grant_type": "password",
                 "username": "username",
@@ -58,7 +55,7 @@ def test_login(create_user, client):
 def test_login_invalid_credentials(create_user, client):
     with client as c:
         response = c.post(
-            "/token",
+            "/user/token",
             data={
                 "grant_type": "password",
                 "username": "username",
@@ -72,7 +69,7 @@ def test_login_invalid_credentials(create_user, client):
 def test_login_nonexistent(client):
     with client as c:
         response = c.post(
-            "/token",
+            "/user/token",
             data={
                 "grant_type": "password",
                 "username": "username",
@@ -91,8 +88,7 @@ def test_read_users_me(create_token, client):
 
     assert response.status_code == 200
     assert response.json() == {
-        "name": "username",
-        "email_address": "user@example.com",
+        "username": "username",
         "user_id": 1,
     }
 

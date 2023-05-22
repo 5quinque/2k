@@ -10,7 +10,8 @@ from twok.database.crud import DB
 from twok.database import schemas, models
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/token")
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/token", auto_error=False)
 
 
 def _db(request: Request):
@@ -67,11 +68,29 @@ async def _current_user(
     )
 
 
+async def _optional_current_user(
+    auth: Auth = Depends(_auth), token: Optional[str] = Depends(optional_oauth2_scheme)
+):
+    if token:
+        user = auth.user(token)
+        if user:
+            return user
+
+    return None
+
+
 def _post(post_id: int, db: DB = Depends(_db)):
     db_post = db.post.get(filter=[models.Post.post_id == post_id])
 
     if db_post is None:
         raise HTTPException(status_code=404, detail="Post not found")
+
+    return db_post
+
+
+def _root_post(db_post: models.Post = Depends(_post), db: DB = Depends(_db)):
+    if db_post.parent_id:
+        db_post = db.post.get(filter=[models.Post.post_id == db_post.parent_id])
 
     return db_post
 
@@ -176,11 +195,13 @@ def _post_prechecks(
 
 auth = Annotated[Auth, Depends(_auth)]
 current_user = Annotated[bool, Depends(_current_user)]
+optional_current_user = Annotated[bool, Depends(_optional_current_user)]
 database = Annotated[DB, Depends(_db)]
 pagination_parameters = Annotated[dict, Depends(_pagination_parameters)]
 page_count = Annotated[int, Depends(_page_count)]
 post = Annotated[schemas.Post, Depends(_post)]
 posts = Annotated[list[schemas.Post], Depends(_posts)]
 board = Annotated[schemas.Board, Depends(_board)]
+root_post = Annotated[schemas.Post, Depends(_root_post)]
 search_posts = Annotated[list[schemas.Post], Depends(_search_posts)]
 post_prechecks = Annotated[bool, Depends(_post_prechecks)]

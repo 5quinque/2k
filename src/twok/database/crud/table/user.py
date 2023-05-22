@@ -10,4 +10,4 @@ class User(Table):
     def __init__(self, session: sqlalchemy.orm.session.Session):
         super().__init__(session)
 
-        self.main_column = UserModel.name
+        self.main_column = UserModel.username

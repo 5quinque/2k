@@ -10,8 +10,7 @@ from pydantic.networks import EmailStr
 
 
 class UserBase(BaseModel):
-    name: str
-    email_address: EmailStr
+    username: str
 
 
 class UserCreate(UserBase):
@@ -20,6 +19,14 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     user_id: int
+
+    class Config:
+        orm_mode = True
+
+
+class UserAndToken(BaseModel):
+    user: User
+    jwt: "Token"
 
     class Config:
         orm_mode = True
@@ -104,3 +111,4 @@ class HealthCheckResponse(BaseModel):
 
 
 Post.update_forward_refs()
+UserAndToken.update_forward_refs()

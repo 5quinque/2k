@@ -9,20 +9,19 @@ from twok.database import schemas
 
 
 user_router = APIRouter(
-    # prefix="/",
+    prefix="/user",
     tags=["User"],
-    # dependencies=[Depends(db)],
     responses={404: {"description": "Not found"}},
 )
 
 
-@user_router.get("/user/me", response_model=schemas.User)
+@user_router.get("/me", response_model=schemas.User)
 async def read_users_me(current_user: dependencies.current_user):
     return current_user
 
 
 # preflight options req for /user/me
-@user_router.options("/user/me", response_model=schemas.User)
+@user_router.options("/me", response_model=schemas.User)
 async def options_user_me():
     return Response(
         headers={
@@ -41,31 +40,27 @@ async def login(
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-    access_token = auth.create_access_token(data={"sub": user.name})
+    access_token = auth.create_access_token(data={"sub": user.username})
 
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@user_router.post("/user", response_model=schemas.User, status_code=201)
+@user_router.post("", response_model=schemas.UserAndToken, status_code=201)
 async def create_user(user: schemas.UserCreate, auth: dependencies.auth):
     # "registering" a user is more of a "crud" task. We will probably move that.
     # creating of the token still requires `auth`.
     db_user = auth.register_user(user)
     if db_user:
-        # [TODO] also return a token
-        # access_token = auth.create_access_token(data={"sub": user.name})
-        # return {"user": user, "jwt": {"access_token": access_token, "token_type": "bearer"}}
-        # Would also need a new response model for this.
-        # class UserWithToken(BaseModel):
-        #     user: User
-        #     jwt: Token
-
-        return db_user
+        access_token = auth.create_access_token(data={"sub": user.username})
+        return {
+            "user": db_user,
+            "jwt": {"access_token": access_token, "token_type": "bearer"},
+        }
     else:
         raise HTTPException(status_code=409, detail="User already registered")
 
 
-@user_router.options("/user", response_model=schemas.User)
+@user_router.options("", response_model=schemas.User)
 async def options_user():
     return Response(
         headers={

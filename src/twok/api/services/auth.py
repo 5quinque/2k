@@ -50,14 +50,13 @@ class Auth:
         return encoded_jwt
 
     def register_user(self, user: models.User):
-        db_user = self.db.user.get(user.name)
+        db_user = self.db.user.get(user.username)
         if db_user:
             return None
 
         return self.db.user.create(
-            name=user.name,
+            username=user.username,
             password_hash=self.password_hash(user.plaintext_password),
-            email_address=user.email_address,
         )
 
     def user(self, token: str):

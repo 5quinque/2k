@@ -42,9 +42,8 @@ def env():
 @pytest.fixture(scope="function")
 def create_user(db: DB):
     yield db.user.create(
-        name="username",
+        username="username",
         password_hash="$2b$12$Tlj5xnuVKIWlE319Bu81ce8YRsWt5.Q/dkiQMgkdBbTJSFNPtzlzy",
-        email_address="user@example.com",
     )
 
 
@@ -53,7 +52,7 @@ def create_user(db: DB):
 def create_token(db: DB, create_user: models.User):
     user = db.user.get("username")
     auth = Auth(db)
-    token = auth.create_access_token(data={"sub": user.name})
+    token = auth.create_access_token(data={"sub": user.username})
     return token
 
 

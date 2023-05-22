@@ -16,7 +16,7 @@ post_router = APIRouter(
 
 
 @post_router.get("/{post_id}", response_model=schemas.Post)
-def read_post(post: dependencies.post):
+def read_post(post: dependencies.root_post):
     return post
 
 
@@ -36,6 +36,7 @@ def create_post(
     post: schemas.PostCreate,
     db: dependencies.database,
     post_prechecks: dependencies.post_prechecks,
+    optional_current_user: dependencies.optional_current_user = None,
 ):
     db_board = db.board.get(filter=[models.Board.name == post.board_name])
     if not db_board:
@@ -49,6 +50,7 @@ def create_post(
         date=datetime.now(),
         board_id=db_board.board_id,
         parent_id=post.parent_id,
+        user_id=optional_current_user.user_id,
     )
 
     if post.file_id:

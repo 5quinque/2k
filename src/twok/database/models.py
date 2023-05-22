@@ -16,15 +16,18 @@ class User(Base):
     __tablename__ = "user"
 
     user_id = Column(Integer, primary_key=True)
-    name = Column(String(32))
-    email_address = Column(String(128))
+    username = Column(String(32))
     password_hash = Column(String(128))
+
+    # posts = relationship("Post", back_populates="user")
 
 
 class Post(Base):
     __tablename__ = "post"
 
     post_id = Column(Integer, primary_key=True)
+    user_id = Column(ForeignKey("user.user_id"))
+    user = relationship("User", backref="posts")
     title = Column(String(128), nullable=True)
     message = Column(String(512), nullable=True)
     date = Column(String(32), nullable=True)
@@ -39,12 +42,14 @@ class Post(Base):
 
     file = relationship("File", back_populates="post", uselist=False)
 
+
 class Board(Base):
     __tablename__ = "board"
 
     board_id = Column(Integer, primary_key=True)
     name = Column(String(128), nullable=False)
     posts = relationship("Post", back_populates="board")
+
 
 class File(Base):
     __tablename__ = "file"
@@ -55,6 +60,7 @@ class File(Base):
     content_type = Column(String(64), nullable=False)  # mimetype
     post_id = Column(Integer, ForeignKey("post.post_id"))
     post = relationship("Post", back_populates="file")
+
 
 class Requester(Base):
     __tablename__ = "requester"
