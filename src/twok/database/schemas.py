@@ -2,11 +2,9 @@
 """
 
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 
-from fastapi import UploadFile
 from pydantic import BaseModel
-from pydantic.networks import EmailStr
 
 
 class UserBase(BaseModel):
@@ -19,6 +17,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     user_id: int
+    user_role: int = 0
 
     class Config:
         orm_mode = True
@@ -53,13 +52,13 @@ class BoardCreate(BoardBase):
 
 
 class PostBase(BaseModel):
-    title: str
-    message: str = None
+    title: str = None
+    message: str
 
 
 class PostCreate(PostBase):
     board_name: str
-    parent_id: int = None
+    parent_id: Optional[int] = None
     file_id: Optional[int] = None
 
 
@@ -68,9 +67,10 @@ class Post(PostBase):
     board: BoardBase
     date: str = None
     file: Optional["FileBase"] = None
-    parent_id: int = None
+    parent_id: Optional[int] = None
     children: list["Post"] = []
-    latest_reply_date: str = None
+    latest_reply_date: Optional[str] = None
+    user: Optional[User] = None
 
     class Config:
         orm_mode = True
@@ -81,7 +81,7 @@ class FileBase(BaseModel):
     file_name: str
     file_hash: str
     content_type: str
-    post_id: int = None
+    post_id: Optional[int] = None
 
     class Config:
         orm_mode = True

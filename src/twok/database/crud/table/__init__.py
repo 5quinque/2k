@@ -36,7 +36,21 @@ class Table:
         if entity:
             return entity
 
-    def create(self, filter=None, **kwargs: dict):
+    def row_count(self, table: Optional[sqlalchemy.Table] = None):
+        """Get the number of rows in the table
+
+        Args:
+            table (sqlalchemy.Table, optional): Table to count. Defaults to None.
+
+        Returns:
+            int: Number of rows in the table
+        """
+        if not table:
+            table = self.table
+
+        return self._session.query(table).count()
+
+    def create(self, filter=None, **kwargs):
         """Create an entity
         Args:
             **kwargs: Entity attributes

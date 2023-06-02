@@ -44,13 +44,15 @@ def create_post(
 
     post_messaged_escaped = html.escape(post.message)
 
+    user_id = optional_current_user.user_id if optional_current_user else None
+
     db_post = db.post.create(
         title=post.title,
         message=post_messaged_escaped,
         date=datetime.now(),
         board_id=db_board.board_id,
         parent_id=post.parent_id,
-        user_id=optional_current_user.user_id,
+        user_id=user_id,
     )
 
     if post.file_id:

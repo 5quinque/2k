@@ -8,6 +8,7 @@ from sqlalchemy import (
     Integer,
     String,
 )
+from sqlalchemy.schema import UniqueConstraint
 
 from twok.database import Base
 
@@ -18,6 +19,11 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     username = Column(String(32))
     password_hash = Column(String(128))
+
+    # user_role column defaults to 0
+    # 0 = user
+    # 1 = admin
+    user_role = Column(Integer, default=0)
 
     # posts = relationship("Post", back_populates="user")
 

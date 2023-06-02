@@ -79,6 +79,13 @@ async def _optional_current_user(
     return None
 
 
+async def _current_user_is_admin(
+    current_user: schemas.User = Depends(_current_user),
+):
+    if not current_user.user_role == 1:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+
 def _post(post_id: int, db: DB = Depends(_db)):
     db_post = db.post.get(filter=[models.Post.post_id == post_id])
 

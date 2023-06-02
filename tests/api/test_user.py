@@ -7,10 +7,15 @@ def test_create_user(client):
                 "plaintext_password": "pasword",
             },
         )
+
     assert response.status_code == 201
-    assert response.json() == {
+
+    assert "jwt" in response.json()
+    assert "access_token" in response.json()["jwt"]
+    assert response.json()["user"] == {
         "username": "username",
-        "user_id": 1,
+        "user_id": 2,
+        "user_role": 0,
     }
 
 
@@ -89,7 +94,8 @@ def test_read_users_me(create_token, client):
     assert response.status_code == 200
     assert response.json() == {
         "username": "username",
-        "user_id": 1,
+        "user_id": 2,
+        "user_role": 0,
     }
 
 

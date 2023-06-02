@@ -8,7 +8,7 @@ def test_create_board(client):
         )
     assert response.status_code == 201
 
-    assert response.json() == {"name": "board", "board_id": 1, "posts": []}
+    assert response.json() == {"name": "board", "board_id": 4, "posts": []}
 
 
 def test_create_board_duplicate(create_board, client):
@@ -24,14 +24,14 @@ def test_create_board_duplicate(create_board, client):
     assert response.json() == {"detail": "Board already exists"}
 
 
-def test_get_boards_empty(client):
+def test_get_boards_default(client):
     with client as c:
         response = c.get(
             "/board",
         )
     assert response.status_code == 200
 
-    assert response.json() == []
+    assert response.json() == [{"name": "tech"}, {"name": "board2"}, {"name": "board3"}]
 
 
 def test_get_boards(create_board, client):
@@ -41,7 +41,12 @@ def test_get_boards(create_board, client):
         )
     assert response.status_code == 200
 
-    assert response.json() == [{"name": "board"}]
+    assert response.json() == [
+        {"name": "tech"},
+        {"name": "board2"},
+        {"name": "board3"},
+        {"name": "board"},
+    ]
 
 
 def test_get_posts_empty(create_board, client):

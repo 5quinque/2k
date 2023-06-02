@@ -3,5 +3,5 @@ from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
-    items_per_page: int = 5
+    items_per_page: int = 15
     post_time_limit: timedelta = timedelta(seconds=1)
