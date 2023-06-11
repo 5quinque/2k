@@ -20,12 +20,9 @@ class User(Base):
     username = Column(String(32))
     password_hash = Column(String(128))
 
-    # user_role column defaults to 0
-    # 0 = user
-    # 1 = admin
-    user_role = Column(Integer, default=0)
+    user_role = Column(String(32), default="none")
 
-    # posts = relationship("Post", back_populates="user")
+    posts = relationship("Post", back_populates="user")  # TODO: Fix this
 
 
 class Post(Base):
@@ -33,7 +30,7 @@ class Post(Base):
 
     post_id = Column(Integer, primary_key=True)
     user_id = Column(ForeignKey("user.user_id"))
-    user = relationship("User", backref="posts")
+    user = relationship("User", back_populates="posts")
     title = Column(String(128), nullable=True)
     message = Column(String(512), nullable=True)
     date = Column(String(32), nullable=True)
@@ -47,6 +44,9 @@ class Post(Base):
     latest_reply_date = Column(String(32), nullable=True)
 
     file = relationship("File", back_populates="post", uselist=False)
+
+    requester_id = Column(ForeignKey("requester.requester_id"))
+    requester = relationship("Requester", back_populates="posts")
 
 
 class Board(Base):
@@ -74,3 +74,20 @@ class Requester(Base):
     requester_id = Column(Integer, primary_key=True)
     ip_address = Column(String(64), nullable=False)
     last_post_time = Column(String(32), nullable=False)
+
+    posts = relationship("Post", back_populates="requester")
+
+    bans = relationship("Ban", back_populates="requester")
+
+
+class Ban(Base):
+    __tablename__ = "ban"
+
+    ban_id = Column(Integer, primary_key=True)
+    reason = Column(String(128), nullable=False)
+    date = Column(String(32), nullable=False)
+    expiration = Column(String(32), nullable=False)
+    active = Column(Integer, nullable=False, default=1)
+
+    requester_id = Column(ForeignKey("requester.requester_id"))
+    requester = relationship("Requester", back_populates="bans")

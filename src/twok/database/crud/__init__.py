@@ -10,6 +10,7 @@ from twok.database.models import (
     User,
 )
 
+from twok.database.crud.table.ban import Ban as BanCRUD
 from twok.database.crud.table.board import Board as BoardCRUD
 from twok.database.crud.table.file import File as FileCRUD
 from twok.database.crud.table.post import Post as PostCRUD
@@ -23,6 +24,7 @@ class DB:
     def __init__(self, session: sqlalchemy.orm.session.Session):
         self._session = session
 
+        self.ban = BanCRUD(self._session)
         self.board = BoardCRUD(self._session)
         self.file = FileCRUD(self._session)
         self.post = PostCRUD(self._session)

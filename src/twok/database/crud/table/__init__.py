@@ -55,14 +55,19 @@ class Table:
         Args:
             **kwargs: Entity attributes
 
+        n.b. this functions means no entity can have a column named `filter`
+
         Returns:
             (object, None): newly created entity object.
         """
-        if not filter:
-            filter = [self.main_column == kwargs[self.main_column.name]]
+        # We are able to blindly create an entity if `filter=False`
+        # if `filter` is `None` we need to check if an entity already exists using it's main column
+        if filter is not False:
+            if not filter:
+                filter = [self.main_column == kwargs[self.main_column.name]]
 
-        if self.get(filter=filter):
-            return False
+            if self.get(filter=filter):
+                return False
 
         entity = self.table(**kwargs)
         self._session.add(entity)

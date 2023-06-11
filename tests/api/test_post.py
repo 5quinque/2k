@@ -40,6 +40,17 @@ def test_create_post(create_board, client):
     assert response.json()["board"]["name"] == "board"
 
 
+def test_delete_post(create_post, create_admin_token, client):
+    headers = {"Authorization": f"Bearer {create_admin_token}"}
+
+    with client as c:
+        response = c.delete("/post/1", headers=headers)
+
+    assert response.status_code == 204
+
+    assert response.text == ""
+
+
 def test_create_post_invalid_board(client):
     with client as c:
         response = c.post(

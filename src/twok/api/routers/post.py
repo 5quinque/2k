@@ -31,6 +31,17 @@ def options_create_post():
     )
 
 
+@post_router.delete("/{post_id}", status_code=204)
+def delete_post(
+    post: dependencies.post,
+    db: dependencies.database,
+    current_user_is_admin: dependencies.current_user_is_admin = None,
+):
+    db.post.delete(post)
+
+    return None
+
+
 @post_router.post("", response_model=schemas.Post, status_code=201)
 def create_post(
     post: schemas.PostCreate,
@@ -53,6 +64,7 @@ def create_post(
         board_id=db_board.board_id,
         parent_id=post.parent_id,
         user_id=user_id,
+        requester_id=post_prechecks.requester_id,
     )
 
     if post.file_id:
@@ -91,3 +103,14 @@ async def upload_file(
         raise HTTPException(status_code=409, detail="File already exists")
 
     return db_file
+
+
+@post_router.delete("/upload/{file_id}", status_code=204)
+def delete_file(
+    file: dependencies.file,
+    db: dependencies.database,
+    current_user_is_admin: dependencies.current_user_is_admin = None,
+):
+    db.file.delete(file)
+
+    return None

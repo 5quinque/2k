@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime
 from typing import Annotated, Dict, Optional
 
@@ -82,8 +83,41 @@ async def _optional_current_user(
 async def _current_user_is_admin(
     current_user: schemas.User = Depends(_current_user),
 ):
-    if not current_user.user_role == 1:
+    if not current_user.user_role == "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
+
+    return current_user
+
+
+def _user(user_id: int, db: DB = Depends(_db)):
+    db_user = db.user.get(filter=[models.User.user_id == user_id])
+
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return db_user
+
+
+def _can_view_user_profile(
+    current_user: schemas.User = Depends(_current_user),
+    user: schemas.User = Depends(_user),
+):
+    if current_user.user_role == "admin":
+        return True
+
+    if current_user.user_id == user.user_id:
+        return True
+
+    return False
+
+
+def _file(file_id: int, db: DB = Depends(_db)):
+    db_file = db.file.get(filter=[models.File.file_id == file_id])
+
+    if db_file is None:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return db_file
 
 
 def _post(post_id: int, db: DB = Depends(_db)):
@@ -127,6 +161,25 @@ def _posts(
     return db_posts
 
 
+def _user_posts(
+    user_id: int,
+    pagination: Dict = Depends(_pagination_parameters),
+    db: DB = Depends(_db),
+):
+    db_posts = db.api_get(
+        table=models.Post,
+        filter=[models.Post.user_id == user_id],
+        order_by=models.Post.latest_reply_date.desc(),
+        skip=pagination["skip"],
+        limit=pagination["limit"],
+    )
+
+    if db_posts is None:
+        raise HTTPException(status_code=404, detail="Posts not found")
+
+    return db_posts
+
+
 def _board(board_name: str, db: DB = Depends(_db)):
     db_board = db.board.get(filter=[models.Board.name == board_name])
 
@@ -158,20 +211,36 @@ def _search_posts(
     return db_results
 
 
+# def _banned(
+#     request: Request,
+#     db: DB = Depends(_db),
+# ):
+#     requester_ip_addr = request.client.host
+#     db_ban = db.ban.get(filter=[models.Ban.ip_address == requester_ip_addr])
+
+#     if db_ban:
+#         raise HTTPException(status_code=403, detail=f"Banned: {db_ban.reason}")
+
+#     return False
+
+
 def _post_prechecks(
     request: Request,
     db: DB = Depends(_db),
     settings: Settings = Depends(_settings),
 ):
-    # Get the IP address of the requester from the request object
     requester_ip_addr = request.client.host
 
-    # Check if the requester IP address exists in the database
     db_requester = db.requester.get(
         filter=[models.Requester.ip_address == requester_ip_addr]
     )
 
-    if db_requester:
+    try:
+        if db_requester.bans:
+            raise HTTPException(
+                status_code=403, detail=f"Banned: {db_requester.bans[0].reason}"
+            )
+
         # Retrieve the last post time from the database
         last_post_time: str = db_requester.last_post_time
         current_time: datetime = datetime.now()
@@ -184,27 +253,45 @@ def _post_prechecks(
 
         # If the time difference is less than the limit, return False to indicate that the post is not allowed
         if time_difference < settings.post_time_limit:
-            raise HTTPException(status_code=429, detail="Probably posting too fast")
+            raise HTTPException(status_code=429, detail="Posting too fast")
 
         db.requester.update(db_requester, last_post_time=current_time)
-    else:
+    except AttributeError:
+        # Trying to access `db_requester.bans``
         # If the requester IP address doesn't exist in the database, create a new entry
-        # db_requester = models.Requester(ip_address=requester_ip_addr)
-        db.requester.create(
+        db_requester = db.requester.create(
             filter=None,
             ip_address=requester_ip_addr,
             last_post_time=datetime.now(),
         )
 
-    # Return True to indicate that the post is allowed
-    return True
+    # Return db_requester to indicate that the post is allowed
+    return db_requester
+
+
+def _fingerprint(request: Request):
+    """
+    create a "fingerprint" of the user, based of their:
+        - IP address
+        - user agent
+        - language
+    """
+    ip_address = request.client.host
+    user_agent = request.headers.get("user-agent")
+    language = request.headers.get("accept-language")
+
+    return hashlib.sha512(f"{ip_address}{user_agent}{language}".encode()).hexdigest()
 
 
 auth = Annotated[Auth, Depends(_auth)]
 current_user = Annotated[bool, Depends(_current_user)]
 optional_current_user = Annotated[bool, Depends(_optional_current_user)]
+current_user_is_admin = Annotated[bool, Depends(_current_user_is_admin)]
+can_view_user_profile = Annotated[bool, Depends(_can_view_user_profile)]
 database = Annotated[DB, Depends(_db)]
 pagination_parameters = Annotated[dict, Depends(_pagination_parameters)]
+fingerprint = Annotated[str, Depends(_fingerprint)]
+file = Annotated[models.File, Depends(_file)]
 page_count = Annotated[int, Depends(_page_count)]
 post = Annotated[schemas.Post, Depends(_post)]
 posts = Annotated[list[schemas.Post], Depends(_posts)]
@@ -212,3 +299,5 @@ board = Annotated[schemas.Board, Depends(_board)]
 root_post = Annotated[schemas.Post, Depends(_root_post)]
 search_posts = Annotated[list[schemas.Post], Depends(_search_posts)]
 post_prechecks = Annotated[bool, Depends(_post_prechecks)]
+user = Annotated[schemas.User, Depends(_user)]
+user_posts = Annotated[list[schemas.Post], Depends(_user_posts)]

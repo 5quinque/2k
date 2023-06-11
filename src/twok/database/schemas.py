@@ -17,7 +17,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     user_id: int
-    user_role: int = 0
+    user_role: str = "none"
 
     class Config:
         orm_mode = True
@@ -70,7 +70,13 @@ class Post(PostBase):
     parent_id: Optional[int] = None
     children: list["Post"] = []
     latest_reply_date: Optional[str] = None
-    user: Optional[User] = None
+
+    class Config:
+        orm_mode = True
+
+
+class Posts(BaseModel):
+    posts: list[Post]
 
     class Config:
         orm_mode = True
@@ -98,6 +104,37 @@ class Board(BoardBase):
 class SearchListResponse(BaseModel):
     posts: list[Optional[Post]]
     boards: list[Optional[Board]]
+
+
+# class BanBase(BaseModel):
+#     ban_id = int
+#     ip_address = str
+#     reason = str
+#     date = str
+#     expiration = str
+#     active = int
+
+#     class Config:
+#         orm_mode = True
+
+
+# class BanCreate(BanBase):
+#     hello = str
+
+
+class PostBan(BaseModel):
+    post_id: int
+
+
+class BanBase(BaseModel):
+    reason: str
+
+    class Config:
+        orm_mode = True
+
+
+class BanCreate(BanBase):
+    post: PostBan
 
 
 class Requester(BaseModel):

@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import Response
 from fastapi.security import OAuth2PasswordRequestForm
 
 from twok.api import dependencies
 
 from twok.api.services.auth import Auth
-from twok.database import schemas
+from twok.database import schemas, models
 
 
 user_router = APIRouter(
@@ -30,6 +32,16 @@ async def options_user_me():
             "Access-Control-Allow-Headers": "accept, Authorization",
         }
     )
+
+
+@user_router.get("/{user_id}/posts", response_model=list[schemas.Post])
+async def read_users_posts(
+    user: dependencies.user,
+    db: dependencies.database,
+    can_view_user_profile: dependencies.can_view_user_profile = None,
+    user_posts: dependencies.user_posts = None,
+):
+    return user_posts
 
 
 @user_router.post("/token", response_model=schemas.Token)
@@ -69,3 +81,41 @@ async def options_user():
             "Access-Control-Allow-Headers": "accept, Content-Type, Authorization",
         },
     )
+
+
+@user_router.post("/ban", status_code=201)
+def ban_user_requester(
+    ban: schemas.BanCreate,
+    db: dependencies.database,
+    current_user_is_admin: dependencies.current_user_is_admin = None,
+):
+    """
+    Posting as an authenticated user is optional.
+    We want to ban the "user"/"requester"'s IP address.
+    """
+
+    db_post = db.post.get(filter=[models.Post.post_id == ban.post.post_id])
+
+    if not db_post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    db.ban.create(
+        filter=False,
+        requester_id=db_post.requester.requester_id,
+        reason=ban.reason,
+        date=datetime.now(),
+        expiration=datetime.now() + timedelta(days=7),
+    )
+
+    return None
+
+
+@user_router.delete("/{user_id}", status_code=204)
+async def delete_user(
+    user: dependencies.user,
+    db: dependencies.database,
+    current_user_is_admin: dependencies.current_user_is_admin = None,
+):
+    db.user.delete(user)
+
+    return None

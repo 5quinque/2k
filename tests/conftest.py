@@ -56,6 +56,15 @@ def create_token(db: DB, create_user: models.User):
     return token
 
 
+# create admin token
+@pytest.fixture(scope="function")
+def create_admin_token(db: DB):
+    user = db.user.get("admin")
+    auth = Auth(db)
+    token = auth.create_access_token(data={"sub": user.username})
+    return token
+
+
 @pytest.fixture(scope="function")
 def create_board(db: DB):
     yield db.board.create(
@@ -74,10 +83,28 @@ def create_post(db: DB, create_board: models.Board):
 
 
 @pytest.fixture(scope="function")
+def create_user_post(db: DB, create_user: models.User, create_post: models.Post):
+    db.post.update(create_post, user=create_user)
+
+    return create_post
+
+
+@pytest.fixture(scope="function")
 def create_file(db: DB, create_post: models.Post):
     yield db.file.create(
         file_name="the_metamorphosis.jpg",
         file_hash="aff4996afe18fa33760ea1eb463f6fa71f8b01f251ef7e969e9c3b21c7a5cbc8",
         post_id=create_post.post_id,
         content_type="image/jpeg",
+    )
+
+
+@pytest.fixture(scope="function")
+def create_ban(db: DB, create_user: models.User):
+    yield db.ban.create(
+        ip_address="127.0.0.1",
+        reason="test ban",
+        date=datetime.now(),
+        expiration=datetime.now().timestamp() + 3600,
+        active=1,
     )

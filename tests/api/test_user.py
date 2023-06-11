@@ -15,7 +15,7 @@ def test_create_user(client):
     assert response.json()["user"] == {
         "username": "username",
         "user_id": 2,
-        "user_role": 0,
+        "user_role": "none",
     }
 
 
@@ -95,7 +95,7 @@ def test_read_users_me(create_token, client):
     assert response.json() == {
         "username": "username",
         "user_id": 2,
-        "user_role": 0,
+        "user_role": "none",
     }
 
 
@@ -125,3 +125,38 @@ def test_options_read_users_me(client):
         "access-control-allow-headers": "accept, Authorization",
         "content-length": "0",
     }
+
+
+def test_delete_user(create_user, create_admin_token, client):
+    with client as c:
+        response = c.delete(
+            "/user/2", headers={"Authorization": f"Bearer {create_admin_token}"}
+        )
+
+    assert response.status_code == 204
+    assert response.text == ""
+
+
+def test_delete_user_nonexistent(create_admin_token, client):
+    with client as c:
+        response = c.delete(
+            "/user/2", headers={"Authorization": f"Bearer {create_admin_token}"}
+        )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "User not found"}
+
+
+def test_read_users_posts(create_admin_token, create_user_post, client):
+    with client as c:
+        response = c.get(
+            "/user/2/posts", headers={"Authorization": f"Bearer {create_admin_token}"}
+        )
+
+    assert response.status_code == 200
+
+    assert len(response.json()) == 1
+    assert response.json()[0]["post_id"] == 1
+    assert response.json()[0]["title"] == "Test Message Title"
+    assert response.json()[0]["message"] == "Test Message"
+    assert response.json()[0]["board"]["name"] == "board"

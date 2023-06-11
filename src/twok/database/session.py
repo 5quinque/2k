@@ -76,7 +76,7 @@ class Session:
             db.user.create(
                 username="admin",
                 password_hash="$2b$12$0fSMRdqMjZwESmCwR1z15u8VTpjS0SSZkpoTQ2mRibcO.7pxq6thG",
-                user_role=1,
+                user_role="admin",
             )
 
         if db.board.row_count() == 0:
