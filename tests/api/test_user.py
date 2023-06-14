@@ -160,3 +160,26 @@ def test_read_users_posts(create_admin_token, create_user_post, client):
     assert response.json()[0]["title"] == "Test Message Title"
     assert response.json()[0]["message"] == "Test Message"
     assert response.json()[0]["board"]["name"] == "board"
+
+
+def test_ban_user(create_admin_token, create_requester_post, client):
+    with client as c:
+        response = c.post(
+            "/user/ban",
+            headers={"Authorization": f"Bearer {create_admin_token}"},
+            json={"reason": "string", "post": {"post_id": 1}},
+        )
+
+    assert response.status_code == 204
+    assert response.text == ""
+
+
+def test_unban_user(create_admin_token, create_ban, client):
+    with client as c:
+        response = c.delete(
+            "/user/ban/1",
+            headers={"Authorization": f"Bearer {create_admin_token}"},
+        )
+
+    assert response.status_code == 204
+    assert response.text == ""

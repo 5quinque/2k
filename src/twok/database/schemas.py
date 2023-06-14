@@ -137,6 +137,21 @@ class BanCreate(BanBase):
     post: PostBan
 
 
+class Ban(BanBase):
+    ban_id: int
+    requester: "Requester"
+    date: datetime
+    expiration: datetime
+    active: bool
+
+    class Config:
+        orm_mode = True
+
+
+class BanDelete(BaseModel):
+    ban_id: int
+
+
 class Requester(BaseModel):
     ip_address: str
     last_post_time: Optional[datetime] = None

@@ -83,7 +83,7 @@ async def options_user():
     )
 
 
-@user_router.post("/ban", status_code=201)
+@user_router.post("/ban", status_code=204)
 def ban_user_requester(
     ban: schemas.BanCreate,
     db: dependencies.database,
@@ -99,6 +99,9 @@ def ban_user_requester(
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
 
+    if not db_post.requester:
+        raise HTTPException(status_code=404, detail="Requester not found")
+
     db.ban.create(
         filter=False,
         requester_id=db_post.requester.requester_id,
@@ -108,6 +111,39 @@ def ban_user_requester(
     )
 
     return None
+
+
+@user_router.delete("/ban/{ban_id}", status_code=204)
+def unban_user_requester(
+    ban: dependencies.ban,
+    db: dependencies.database,
+    current_user_is_admin: dependencies.current_user_is_admin = None,
+):
+    db.ban.delete(ban)
+
+    return None
+
+
+# @user_router.get("/bans", response_model=schemas.Ban)
+# def get_bans(
+#     pagination: dependencies.pagination_parameters,
+#     db: dependencies.database,
+#     current_user_is_admin: dependencies.current_user_is_admin = None,
+# ):
+#     # filter = [models.Post.board_id == board.board_id and models.Post.parent_id == None]
+
+#     db_bans = db.api_get(
+#         table=models.Ban,
+#         # filter=filter,
+#         order_by=models.ban.date.desc(),
+#         skip=pagination["skip"],
+#         limit=pagination["limit"],
+#     )
+
+#     if db_bans is None:
+#         raise HTTPException(status_code=404, detail="Bans not found")
+
+#     return db_bans
 
 
 @user_router.delete("/{user_id}", status_code=204)

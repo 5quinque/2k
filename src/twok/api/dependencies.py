@@ -269,6 +269,15 @@ def _post_prechecks(
     return db_requester
 
 
+def _ban(ban_id: int, db: DB = Depends(_db)):
+    db_ban = db.ban.get(filter=[models.Ban.ban_id == ban_id])
+
+    if db_ban is None:
+        raise HTTPException(status_code=404, detail="Ban not found")
+
+    return db_ban
+
+
 def _fingerprint(request: Request):
     """
     create a "fingerprint" of the user, based of their:
@@ -284,6 +293,7 @@ def _fingerprint(request: Request):
 
 
 auth = Annotated[Auth, Depends(_auth)]
+ban = Annotated[models.Ban, Depends(_ban)]
 current_user = Annotated[bool, Depends(_current_user)]
 optional_current_user = Annotated[bool, Depends(_optional_current_user)]
 current_user_is_admin = Annotated[bool, Depends(_current_user_is_admin)]

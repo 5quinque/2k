@@ -40,6 +40,41 @@ def test_create_post(create_board, client):
     assert response.json()["board"]["name"] == "board"
 
 
+def test_create_post_with_file(create_board, create_file_no_post, client):
+    with client as c:
+        response = c.post(
+            "/post",
+            json={
+                "title": "title",
+                "message": "content",
+                "board_name": "board",
+                "file_id": create_file_no_post.file_id,
+            },
+        )
+    assert response.status_code == 201
+
+    assert response.json()["post_id"] == 1
+    assert response.json()["title"] == "title"
+    assert response.json()["message"] == "content"
+    assert response.json()["board"]["name"] == "board"
+
+
+def test_create_post_with_file_not_found(create_board, client):
+    with client as c:
+        response = c.post(
+            "/post",
+            json={
+                "title": "title",
+                "message": "content",
+                "board_name": "board",
+                "file_id": 1,
+            },
+        )
+    assert response.status_code == 404
+
+    assert response.json() == {"detail": "File not found"}
+
+
 def test_delete_post(create_post, create_admin_token, client):
     headers = {"Authorization": f"Bearer {create_admin_token}"}
 
@@ -83,6 +118,17 @@ def test_upload_file(create_post, client: TestClient):
         "content_type": "image/jpeg",
         "post_id": 1,
     }
+
+
+def test_delete_file(create_admin_token, create_file, client: TestClient):
+    with client as c:
+        response = c.delete(
+            "/post/upload/1", headers={"Authorization": f"Bearer {create_admin_token}"}
+        )
+
+    assert response.status_code == 204
+
+    assert response.text == ""
 
 
 def test_upload_non_existent_post(client: TestClient):

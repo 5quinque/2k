@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from tempfile import NamedTemporaryFile
 
 import pytest
@@ -90,6 +90,15 @@ def create_user_post(db: DB, create_user: models.User, create_post: models.Post)
 
 
 @pytest.fixture(scope="function")
+def create_requester_post(
+    db: DB, create_requester: models.Requester, create_post: models.Post
+):
+    db.post.update(create_post, requester=create_requester)
+
+    return create_post
+
+
+@pytest.fixture(scope="function")
 def create_file(db: DB, create_post: models.Post):
     yield db.file.create(
         file_name="the_metamorphosis.jpg",
@@ -100,11 +109,29 @@ def create_file(db: DB, create_post: models.Post):
 
 
 @pytest.fixture(scope="function")
-def create_ban(db: DB, create_user: models.User):
-    yield db.ban.create(
+def create_file_no_post(db: DB):
+    yield db.file.create(
+        file_name="the_metamorphosis.jpg",
+        file_hash="aff4996afe18fa33760ea1eb463f6fa71f8b01f251ef7e969e9c3b21c7a5cbc8",
+        content_type="image/jpeg",
+    )
+
+
+@pytest.fixture(scope="function")
+def create_requester(db: DB):
+    yield db.requester.create(
         ip_address="127.0.0.1",
+        last_post_time=datetime.now(),
+    )
+
+
+@pytest.fixture(scope="function")
+def create_ban(db: DB, create_requester: models.Requester):
+    yield db.ban.create(
+        filter=False,
         reason="test ban",
         date=datetime.now(),
-        expiration=datetime.now().timestamp() + 3600,
+        expiration=datetime.now() + timedelta(days=7),
+        requester_id=create_requester.requester_id,
         active=1,
     )
